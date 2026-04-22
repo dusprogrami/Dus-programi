@@ -1,10 +1,10 @@
-const CACHE = 'dus-plan-v1';
+const CACHE = 'dus-plan-v2';
 const FILES = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/Dus-programi/',
+  '/Dus-programi/index.html',
+  '/Dus-programi/manifest.json',
+  '/Dus-programi/icons/icon-192.png',
+  '/Dus-programi/icons/icon-512.png'
 ];
 
 self.addEventListener('install', e => {
