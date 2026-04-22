@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DUS Çalışma Planı</title>
+<meta name="theme-color" content="#0d0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DUS Plan">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161920;
+    --border: #2a2f3d;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; padding:40px 24px 80px; }
+
+  header { text-align:center; margin-bottom:40px; }
+  header h1 {
+    font-family:'Playfair Display',serif; font-size:clamp(1.8rem,5vw,3.2rem); font-weight:900; letter-spacing:-1px;
+    background:linear-gradient(135deg,#60a5fa 0%,#a78bfa 50%,#f472b6 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1.1; margin-bottom:8px;
+  }
+  header p { color:var(--muted); font-size:0.85rem; letter-spacing:0.08em; text-transform:uppercase; font-family:'DM Mono',monospace; }
+
+  /* PROGRAM TABS (top level) */
+  .prog-tabs { display:flex; justify-content:center; gap:10px; margin-bottom:36px; flex-wrap:wrap; }
+  .prog-btn {
+    padding:12px 32px; border-radius:30px; border:1px solid var(--border); background:var(--surface);
+    color:var(--muted); font-family:'DM Mono',monospace; font-size:0.82rem; cursor:pointer; transition:all 0.2s; letter-spacing:0.05em;
+  }
+  .prog-btn.active { background:linear-gradient(135deg,#1e3a5f,#4c1d95); border-color:#6366f1; color:#fff; }
+
+  .prog-content { display:none; }
+  .prog-content.active { display:block; }
+
+  /* VIEW TABS (blok özeti / zaman çizelgesi) */
+  .view-tabs { display:flex; justify-content:center; gap:8px; margin-bottom:32px; }
+  .view-btn {
+    padding:8px 22px; border-radius:20px; border:1px solid var(--border); background:var(--surface);
+    color:var(--muted); font-family:'DM Mono',monospace; font-size:0.78rem; cursor:pointer; transition:all 0.2s;
+  }
+  .view-btn.active { background:rgba(99,102,241,0.2); border-color:#6366f1; color:#a5b4fc; }
+
+  .view-content { display:none; }
+  .view-content.active { display:block; }
+
+  /* LEGEND */
+  .legend { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:28px; }
+  .legend-item { display:flex; align-items:center; gap:7px; font-size:0.78rem; color:var(--muted); font-family:'DM Mono',monospace; }
+  .legend-dot { width:24px; height:9px; border-radius:3px; }
+
+  /* BLOCK CARDS */
+  .blocks-wrapper { max-width:1100px; margin:0 auto; display:flex; flex-direction:column; gap:24px; }
+  .block-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+  .block-header { display:flex; align-items:center; gap:14px; padding:14px 22px; border-bottom:1px solid var(--border); }
+  .block-num { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; line-height:1; flex-shrink:0; }
+  .block-label { font-size:0.72rem; font-family:'DM Mono',monospace; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; }
+  .block-title { font-weight:500; font-size:0.92rem; color:var(--text); margin-top:2px; }
+  .block-total { margin-left:auto; font-family:'DM Mono',monospace; font-size:0.82rem; color:var(--muted); white-space:nowrap; }
+  .block-total span { color:var(--text); font-weight:500; }
+  .subjects-grid { padding:18px 22px; display:flex; flex-direction:column; gap:12px; }
+  .subject-row { display:grid; grid-template-columns:155px 1fr auto; align-items:center; gap:12px; }
+  .subject-name { font-size:0.83rem; font-weight:500; color:var(--text); }
+  .bar-container { display:flex; gap:3px; height:30px; align-items:center; }
+  .bar-segment {
+    height:26px; border-radius:6px; display:flex; align-items:center; justify-content:center;
+    font-size:0.68rem; font-family:'DM Mono',monospace; color:rgba(255,255,255,0.9); font-weight:500;
+    white-space:nowrap; padding:0 8px; flex-shrink:0; transition:transform 0.15s;
+  }
+  .bar-segment:hover { transform:scaleY(1.08); }
+  .seg-konu { background:linear-gradient(135deg,#1e40af,#3b82f6); }
+  .seg-soru { background:linear-gradient(135deg,#9d174d,#ec4899); }
+  .seg-gun  { background:linear-gradient(135deg,#1e3a5f,#6366f1); }
+  .day-count { font-family:'DM Mono',monospace; font-size:0.75rem; color:var(--muted); white-space:nowrap; text-align:right; min-width:46px; }
+  .total-bar { margin-top:4px; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .total-label { font-family:'DM Mono',monospace; font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; width:155px; flex-shrink:0; }
+  .summary-chips { display:flex; gap:7px; flex-wrap:wrap; }
+  .chip { padding:3px 10px; border-radius:20px; font-size:0.72rem; font-family:'DM Mono',monospace; font-weight:500; }
+  .chip-konu { background:rgba(59,130,246,0.15); color:#93c5fd; border:1px solid rgba(59,130,246,0.3); }
+  .chip-soru { background:rgba(236,72,153,0.15); color:#f9a8d4; border:1px solid rgba(236,72,153,0.3); }
+  .chip-gun  { background:rgba(99,102,241,0.15); color:#a5b4fc; border:1px solid rgba(99,102,241,0.3); }
+  .chip-total { background:rgba(255,255,255,0.05); color:var(--muted); border:1px solid var(--border); }
+
+  /* GRAND SUMMARY */
+  .grand-summary { max-width:1100px; margin:28px auto 0; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:22px 24px; display:grid; grid-template-columns:repeat(3,1fr); gap:16px; text-align:center; }
+  .grand-stat { display:flex; flex-direction:column; gap:4px; }
+  .grand-num { font-family:'Playfair Display',serif; font-size:2.2rem; font-weight:700; line-height:1; }
+  .grand-desc { font-family:'DM Mono',monospace; font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; }
+
+  /* TIMELINE */
+  .timeline-wrapper { max-width:960px; margin:0 auto; position:relative; }
+  .timeline-wrapper::before {
+    content:''; position:absolute; left:29px; top:0; bottom:0; width:2px;
+    background:linear-gradient(to bottom,#4f8ef7,#a78bfa,#fb923c,#34d399,#facc15,#4f8ef7,#a78bfa,#fb923c,#34d399,#facc15);
+    border-radius:2px; opacity:0.3;
+  }
+  .timeline-phase { display:flex; gap:18px; margin-bottom:16px; position:relative; }
+  .phase-dot {
+    width:58px; height:58px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; flex-shrink:0;
+    position:relative; z-index:1; border:2px solid; align-self:flex-start; margin-top:4px;
+  }
+  .phase-body { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+  .phase-header { padding:12px 17px; display:flex; align-items:center; justify-content:space-between; gap:10px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .phase-title { font-weight:600; font-size:0.92rem; }
+  .phase-meta { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  .phase-range { font-family:'DM Mono',monospace; font-size:0.7rem; color:var(--muted); }
+  .phase-days-badge { font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--muted); background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; padding:2px 9px; }
+  .phase-days-badge strong { color:var(--text); }
+  .phase-subjects { padding:11px 17px; display:flex; flex-direction:column; gap:6px; }
+  .phase-subject-row { display:flex; align-items:center; gap:9px; }
+  .ps-name { font-size:0.8rem; color:var(--text); width:148px; flex-shrink:0; }
+  .ps-bars { display:flex; gap:3px; flex:1; }
+  .ps-bar { height:21px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:0.63rem; font-family:'DM Mono',monospace; color:rgba(255,255,255,0.85); white-space:nowrap; padding:0 7px; flex-shrink:0; }
+  .ps-konu   { background:linear-gradient(135deg,#1e40af,#3b82f6); }
+  .ps-soru   { background:linear-gradient(135deg,#9d174d,#ec4899); }
+  .ps-gun    { background:linear-gradient(135deg,#1e3a5f,#6366f1); }
+  .ps-tekrar { background:linear-gradient(135deg,#78350f,#d97706); border:1px solid rgba(251,191,36,0.3); }
+  .ps-brans  { background:linear-gradient(135deg,#7c1d6f,#db2777); }
+  .ps-genel  { background:linear-gradient(135deg,#064e3b,#059669); }
+  .ps-days { font-family:'DM Mono',monospace; font-size:0.7rem; color:var(--muted); white-space:nowrap; width:34px; text-align:right; }
+  .phase-type-label { display:inline-block; padding:2px 8px; border-radius:7px; font-family:'DM Mono',monospace; font-size:0.67rem; font-weight:500; margin-right:5px; letter-spacing:0.05em; }
+  .label-blok   { background:rgba(79,142,247,0.15); color:#93c5fd; border:1px solid rgba(79,142,247,0.3); }
+  .label-tekrar { background:rgba(250,204,21,0.12); color:#fde047; border:1px solid rgba(250,204,21,0.3); }
+  .label-genel  { background:rgba(52,211,153,0.12); color:#6ee7b7; border:1px solid rgba(52,211,153,0.3); }
+  .progress-row { display:flex; align-items:center; gap:10px; padding:8px 17px 11px; border-top:1px solid var(--border); }
+  .progress-track { flex:1; height:4px; background:var(--border); border-radius:3px; overflow:hidden; }
+  .progress-fill { height:100%; border-radius:3px; }
+  .progress-label { font-family:'DM Mono',monospace; font-size:0.66rem; color:var(--muted); white-space:nowrap; }
+
+  @media(max-width:640px){
+    .subject-row { grid-template-columns:110px 1fr auto; gap:8px; }
+    .total-label { width:110px; }
+    .grand-summary { grid-template-columns:1fr; gap:12px; }
+    .ps-name { width:100px; }
+    .timeline-wrapper::before { left:23px; }
+    .phase-dot { width:46px; height:46px; font-size:0.9rem; }
+    .prog-btn { padding:10px 20px; font-size:0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>DUS Çalışma Planı</h1>
+  <p>14 ders · 4 blok · 2 program</p>
+</header>
+
+<div class="prog-tabs">
+  <button class="prog-btn active" onclick="switchProg('oncesi',this)">🎓 Mezuniyet Öncesi Programı</button>
+  <button class="prog-btn" onclick="switchProg('sonrasi',this)">✅ Mezuniyet Sonrası Programı</button>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PROGRAM 1: MEZUNİYET ÖNCESİ               -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="prog-oncesi" class="prog-content active">
+  <div class="view-tabs">
+    <button class="view-btn active" onclick="switchView('oncesi','blok',this)">📚 Blok Özeti</button>
+    <button class="view-btn" onclick="switchView('oncesi','zaman',this)">📅 Zaman Çizelgesi</button>
+  </div>
+
+  <div id="oncesi-blok" class="view-content active">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#1e40af,#3b82f6)"></div>Konu Tekrarı</div>
+      <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#9d174d,#ec4899)"></div>Soru Çözümü</div>
+    </div>
+    <div class="blocks-wrapper" id="oncesi-blocks"></div>
+    <div class="grand-summary" id="oncesi-grand"></div>
+  </div>
+
+  <div id="oncesi-zaman" class="view-content">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#1e40af,#3b82f6)"></div>Konu</div>
+      <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#9d174d,#ec4899)"></div>Soru</div>
+      <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#78350f,#d97706)"></div>Tekrar</div>
+      <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#7c1d6f,#db2777)"></div>Branş Den.</div>
+      <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#064e3b,#059669)"></div>Genel Den.</div>
+    </div>
+    <div class="timeline-wrapper" id="oncesi-timeline"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PROGRAM 2: MEZUNİYET SONRASI              -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="prog-sonrasi" class="prog-content">
+  <div class="view-tabs">
+    <button class="view-btn active" onclick="switchView('sonrasi','blok',this)">📚 Blok Özeti</button>
+    <button class="view-btn" onclick="switchView('sonrasi','zaman',this)">📅 Zaman Çizelgesi</button>
+  </div>
+
+  <div id="sonrasi-blok" class="view-content active">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#1e3a5f,#6366f1)"></div>Çalışma Günü</div>
+    </div>
+    <div class="blocks-wrapper" id="sonrasi-blocks"></div>
+    <div class="grand-summary" id="sonrasi-grand"></div>
+  </div>
+
+  <div id="sonrasi-zaman" class="view-content">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#1e3a5f,#6366f1)"></div>Çalışma</div>
+      <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#78350f,#d97706)"></div>Tekrar + Genel Den.</div>
+    </div>
+    <div class="timeline-wrapper" id="sonrasi-timeline"></div>
+  </div>
+</div>
+
+<script>
+const UNIT = 44;
+
+// ── BLOK TANIMLARI ──────────────────────────────────────────────
+// Blok sırası: 1,2,4,3 → yani eski 3=periodontoloji 4=endodonti
+// Kullanıcı isteği: eski 3.blok (endodonti grubu) → şimdi 4. blok
+//                  eski 4.blok (periodontoloji grubu) → şimdi 3. blok
+
+const blockDefs = [
+  {
+    block:1, title:"Anatomi · Patoloji · Cerrahi · Radyoloji", color:"#4f8ef7",
+    dotBg:"rgba(79,142,247,0.15)",
+    subjects:[
+      {name:"Anatomi",    konu:1, soru:1, source:"dusdatamax"},
+      {name:"Patoloji",   konu:1, soru:1, source:"dusdatamax"},
+      {name:"Cerrahi",    konu:1, soru:1, source:"dusdatamax"},
+      {name:"Radyoloji",  konu:1, soru:1, source:"prodent"},
+    ]
+  },
+  {
+    block:2, title:"Biyokimya · Fizyoloji · Farmakoloji", color:"#a78bfa",
+    dotBg:"rgba(167,139,250,0.15)",
+    subjects:[
+      {name:"Biyokimya",   konu:1, soru:1, source:"dusdatamax"},
+      {name:"Fizyoloji",   konu:1, soru:1, source:"dusdatamax"},
+      {name:"Farmakoloji", konu:1, soru:1, source:"dusdatamax"},
+    ]
+  },
+  {
+    // eski 4. blok → şimdi 3. blok
+    block:3, title:"Periodontoloji · Mikrobiyoloji · Ortodonti", color:"#fb923c",
+    dotBg:"rgba(251,146,60,0.15)",
+    subjects:[
+      {name:"Periodontoloji", konu:1, soru:1, source:"dusdatamax"},
+      {name:"Mikrobiyoloji",  konu:1, soru:1, source:"dusdatamax"},
+      {name:"Ortodonti",      konu:1, soru:1, source:"dusdatamax"},
+    ]
+  },
+  {
+    // eski 3. blok → şimdi 4. blok
+    block:4, title:"Endodonti · Restorative · Pedodonti · Protez", color:"#34d399",
+    dotBg:"rgba(52,211,153,0.15)",
+    subjects:[
+      {name:"Endodonti",   konu:1, soru:1, source:"dusdatamax"},
+      {name:"Restorative", konu:1, soru:1, source:"dusdatamax"},
+      {name:"Pedodonti",   konu:1, soru:1, source:"prodent"},
+      {name:"Protez",      konu:1, soru:1, source:"dusdatamax"},
+    ]
+  }
+];
+
+function blockDays(b){ return b.subjects.reduce((a,s)=>a+s.konu+s.soru,0); }
+
+function tekrarSubs(indices){
+  const out=[];
+  indices.forEach(bi=>{
+    blockDefs[bi].subjects.forEach(s=>out.push({name:s.name, block:bi+1, color:blockDefs[bi].color}));
+  });
+  return out;
+}
+
+// ── MEZUNİYET ÖNCESİ FAZLARI ────────────────────────────────────
+const phasesOncesi = [
+  {type:'blok', blokIdx:0},
+  {type:'blok', blokIdx:1},
+  {type:'tekrar', prevBlokIdx:0, label:"1. Blok Tekrarı"},
+  {type:'blok', blokIdx:2},
+  {type:'tekrar', prevBlokIdx:1, label:"2. Blok Tekrarı"},
+  {type:'blok', blokIdx:3},
+  {type:'tekrar', prevBlokIdx:2, label:"3. Blok Tekrarı"},
+  // 2. tur
+  {type:'blok', blokIdx:0},
+  {type:'tekrar', prevBlokIdx:3, label:"4. Blok Tekrarı"},
+  {type:'genel', label:"Genel Deneme"},
+  {type:'blok', blokIdx:1},
+  {type:'tekrar', prevBlokIdx:0, label:"1. Blok Tekrarı"},
+  {type:'genel', label:"Genel Deneme"},
+  {type:'blok', blokIdx:2},
+  {type:'tekrar', prevBlokIdx:1, label:"2. Blok Tekrarı"},
+  {type:'genel', label:"Genel Deneme"},
+  {type:'blok', blokIdx:3},
+  {type:'tekrar', prevBlokIdx:2, label:"3. Blok Tekrarı"},
+  {type:'genel', label:"Genel Deneme"},
+];
+
+// ── MEZUNİYET SONRASI FAZLARI ────────────────────────────────────
+// Tekrar: sadece bir önceki bloktan 1 gün, sabah genel deneme dahil
+const phasesSonrasi = [
+  {type:'blok', blokIdx:0},
+  {type:'blok', blokIdx:1},
+  {type:'tekrar-s', prevBlokIdx:0, label:"1. Blok Tekrarı + Genel Deneme"},
+  {type:'blok', blokIdx:2},
+  {type:'tekrar-s', prevBlokIdx:1, label:"2. Blok Tekrarı + Genel Deneme"},
+  {type:'blok', blokIdx:3},
+  {type:'tekrar-s', prevBlokIdx:2, label:"3. Blok Tekrarı + Genel Deneme"},
+  // 2. tur
+  {type:'blok', blokIdx:0},
+  {type:'tekrar-s', prevBlokIdx:3, label:"4. Blok Tekrarı + Genel Deneme"},
+  {type:'blok', blokIdx:1},
+  {type:'tekrar-s', prevBlokIdx:null, allBlocks:true, label:"Tüm Bloklar Tekrarı + Genel Deneme"},
+  {type:'blok', blokIdx:2},
+  {type:'tekrar-s', prevBlokIdx:null, allBlocks:true, label:"Tüm Bloklar Tekrarı + Genel Deneme"},
+  {type:'blok', blokIdx:3},
+  {type:'tekrar-s', prevBlokIdx:null, allBlocks:true, label:"Tüm Bloklar Tekrarı + Genel Deneme"},
+];
+
+// ════════════════════════════════════════════════════════════════
+// BLOK ÖZETİ RENDER
+// ════════════════════════════════════════════════════════════════
+function renderBlockSummary(containerId, grandId, mode){
+  // mode: 'oncesi' = konu+soru, 'sonrasi' = tek gün
+  const el = document.getElementById(containerId);
+  let grandKonu=0, grandSoru=0, grandGun=0;
+
+  blockDefs.forEach(block=>{
+    const bK = block.subjects.reduce((a,s)=>a+s.konu,0);
+    const bS = block.subjects.reduce((a,s)=>a+s.soru,0);
+    const bT = bK+bS;
+    grandKonu+=bK; grandSoru+=bS; grandGun+=block.subjects.length;
+
+    let rows;
+    if(mode==='oncesi'){
+      rows = block.subjects.map(s=>{
+        const kW=Math.max(s.konu*UNIT,36), sW=Math.max(s.soru*UNIT,36);
+        const src=s.source==='prodent'?'📘 prodent':'📗 dusdatamax';
+        return `
+          <div class="subject-row">
+            <div class="subject-name">${s.name}</div>
+            <div class="bar-container">
+              <div class="bar-segment seg-konu" style="width:${kW}px">${s.konu} gün</div>
+              <div class="bar-segment seg-soru" style="width:${sW}px">${s.soru} gün</div>
+            </div>
+            <div class="day-count">${s.konu+s.soru}g · <span style="font-size:0.63rem;opacity:0.7">${src}</span></div>
+          </div>`;
+      }).join('');
+    } else {
+      rows = block.subjects.map(s=>{
+        const gW=Math.max(1*UNIT,36);
+        const src=s.source==='prodent'?'📘 prodent':'📗 dusdatamax';
+        return `
+          <div class="subject-row">
+            <div class="subject-name">${s.name}</div>
+            <div class="bar-container">
+              <div class="bar-segment seg-gun" style="width:${gW}px">1 gün</div>
+            </div>
+            <div class="day-count">1g · <span style="font-size:0.63rem;opacity:0.7">${src}</span></div>
+          </div>`;
+      }).join('');
+    }
+
+    const chipHTML = mode==='oncesi'
+      ? `<div class="chip chip-konu">📖 Konu: ${bK} gün</div>
+         <div class="chip chip-soru">✏️ Soru: ${bS} gün</div>
+         <div class="chip chip-total">Toplam: ${bT} gün</div>`
+      : `<div class="chip chip-gun">📅 Toplam: ${block.subjects.length} gün</div>`;
+
+    const card=document.createElement('div');
+    card.className='block-card';
+    card.style.borderColor=block.color+'33';
+    card.innerHTML=`
+      <div class="block-header" style="border-bottom-color:${block.color}20">
+        <div class="block-num" style="color:${block.color}">${block.block}</div>
+        <div>
+          <div class="block-label">Blok</div>
+          <div class="block-title">${block.title}</div>
+        </div>
+        <div class="block-total">Toplam: <span>${mode==='oncesi'?bT:block.subjects.length} gün</span></div>
+      </div>
+      <div class="subjects-grid">
+        ${rows}
+        <div class="total-bar">
+          <div class="total-label">Blok Özeti</div>
+          <div class="summary-chips">${chipHTML}</div>
+        </div>
+      </div>`;
+    el.appendChild(card);
+  });
+
+  const grandEl=document.getElementById(grandId);
+  if(mode==='oncesi'){
+    const gT=grandKonu+grandSoru;
+    grandEl.innerHTML=`
+      <div class="grand-stat"><div class="grand-num" style="color:#60a5fa">${grandKonu}</div><div class="grand-desc">Konu Tekrarı Günü</div></div>
+      <div class="grand-stat"><div class="grand-num" style="color:#f472b6">${grandSoru}</div><div class="grand-desc">Soru Çözümü Günü</div></div>
+      <div class="grand-stat"><div class="grand-num" style="color:#34d399">${gT}</div><div class="grand-desc">Toplam Çalışma Günü</div></div>`;
+  } else {
+    grandEl.innerHTML=`
+      <div class="grand-stat"><div class="grand-num" style="color:#a5b4fc">${grandGun}</div><div class="grand-desc">Toplam Çalışma Günü</div></div>
+      <div class="grand-stat"><div class="grand-num" style="color:#34d399">${blockDefs.length}</div><div class="grand-desc">Blok</div></div>
+      <div class="grand-stat"><div class="grand-num" style="color:#fde047">${blockDefs.reduce((a,b)=>a+b.subjects.length,0)}</div><div class="grand-desc">Ders</div></div>`;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// TIMELINE RENDER — MEZUNİYET ÖNCESİ
+// ════════════════════════════════════════════════════════════════
+function renderTimelineOncesi(){
+  const el=document.getElementById('oncesi-timeline');
+
+  let totalDays=0;
+  phasesOncesi.forEach(ph=>{
+    if(ph.type==='blok') totalDays+=blockDays(blockDefs[ph.blokIdx]);
+    else if(ph.type==='tekrar') totalDays+=1;
+    else if(ph.type==='genel') totalDays+=1;
+  });
+
+  const passCount=[0,0,0,0];
+  const passLabels=['','(2. geçiş)','(3. geçiş)'];
+  let day=0;
+
+  phasesOncesi.forEach(ph=>{
+    const div=document.createElement('div');
+    div.className='timeline-phase';
+    let dotColor,dotBg,dotText,title,typeLabel,phaseDays,subHTML;
+
+    if(ph.type==='blok'){
+      const b=blockDefs[ph.blokIdx];
+      passCount[ph.blokIdx]++;
+      const pass=passCount[ph.blokIdx];
+      const passStr=pass>1?` <span style="font-size:0.72rem;opacity:0.6">${passLabels[pass-1]}</span>`:'';
+      dotColor=b.color; dotBg=b.dotBg; dotText=b.block;
+      title=`${b.block}. Blok${passStr}`;
+      typeLabel=`<span class="phase-type-label label-blok">BLOK</span>`;
+      phaseDays=blockDays(b);
+
+      subHTML=b.subjects.map(s=>{
+        const kW=Math.max(s.konu*34,28), sW=Math.max(s.soru*34,28);
+        return `<div class="phase-subject-row">
+          <div class="ps-name">${s.name}</div>
+          <div class="ps-bars">
+            <div class="ps-bar ps-konu" style="width:${kW}px">${s.konu} gün</div>
+            <div class="ps-bar ps-soru" style="width:${sW}px">${s.soru} gün</div>
+          </div>
+          <div class="ps-days">${s.konu+s.soru}g</div>
+        </div>`;
+      }).join('')
+      +`<div class="phase-subject-row" style="margin-top:7px;padding-top:8px;border-top:1px solid #2a2f3d">
+          <div class="ps-name" style="color:#f472b6">🩷 Branş Denemesi</div>
+          <div class="ps-bars"><div class="ps-bar ps-brans" style="width:155px">${b.subjects.map(s=>s.name).join(' · ')}</div></div>
+          <div class="ps-days" style="color:#f472b6;font-size:0.62rem">+0g</div>
+        </div>`;
+
+    } else if(ph.type==='tekrar'){
+      const b=blockDefs[ph.prevBlokIdx];
+      const subs=b.subjects.map(s=>({name:s.name, block:b.block, color:b.color}));
+      phaseDays=1;
+      dotColor='#facc15'; dotBg='rgba(250,204,21,0.12)'; dotText='↺';
+      title=ph.label; typeLabel=`<span class="phase-type-label label-tekrar">TEKRAR</span>`;
+      subHTML=subs.map(s=>`
+        <div class="phase-subject-row">
+          <div class="ps-name" style="color:${s.color}">${s.name} <span style="font-size:0.63rem;opacity:0.5">(B${s.block})</span></div>
+          <div class="ps-bars"><div class="ps-bar ps-tekrar" style="width:54px">tekrar</div></div>
+          <div class="ps-days" style="opacity:0.4">—</div>
+        </div>`).join('')
+      +`<div class="phase-subject-row" style="margin-top:5px;padding-top:7px;border-top:1px solid #2a2f3d">
+          <div class="ps-name" style="color:#facc15;font-size:0.73rem">Toplam</div>
+          <div class="ps-bars"></div>
+          <div class="ps-days" style="color:#facc15;font-weight:600">1g</div>
+        </div>`;
+
+    } else if(ph.type==='genel'){
+      phaseDays=1;
+      dotColor='#34d399'; dotBg='rgba(52,211,153,0.12)'; dotText='✦';
+      title='Genel Deneme'; typeLabel=`<span class="phase-type-label label-genel">GENEL DEN.</span>`;
+      subHTML=`<div class="phase-subject-row">
+        <div class="ps-name" style="color:#34d399">Tüm dersler</div>
+        <div class="ps-bars"><div class="ps-bar ps-genel" style="width:210px">1., 2., 3. ve 4. Blok · tam deneme</div></div>
+        <div class="ps-days">1g</div>
+      </div>`;
+    }
+
+    const s=Math.round((day+Number.EPSILON)*10)/10;
+    day+=phaseDays;
+    const e=Math.round((day+Number.EPSILON)*10)/10;
+    const pct=Math.round((day/totalDays)*100);
+    const fill=ph.type==='blok'?blockDefs[ph.blokIdx].color:ph.type==='tekrar'?'#facc15':'#34d399';
+    const dDisp=Number.isInteger(phaseDays)?phaseDays:Math.round(phaseDays*10)/10;
+
+    div.innerHTML=`
+      <div class="phase-dot" style="color:${dotColor};background:${dotBg};border-color:${dotColor}55">${dotText}</div>
+      <div class="phase-body" style="border-color:${dotColor}28">
+        <div class="phase-header" style="border-bottom-color:${dotColor}18">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">${typeLabel}<span class="phase-title" style="color:${dotColor}">${title}</span></div>
+          <div class="phase-meta">
+            <span class="phase-range">Gün ${s}–${e}</span>
+            <span class="phase-days-badge"><strong>${dDisp}</strong> gün</span>
+          </div>
+        </div>
+        <div class="phase-subjects">${subHTML}</div>
+        <div class="progress-row">
+          <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${fill}99"></div></div>
+          <div class="progress-label">%${pct} · ${e}/${totalDays} gün</div>
+        </div>
+      </div>`;
+    el.appendChild(div);
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+// TIMELINE RENDER — MEZUNİYET SONRASI
+// ════════════════════════════════════════════════════════════════
+function renderTimelineSonrasi(){
+  const el=document.getElementById('sonrasi-timeline');
+
+  let totalDays=0;
+  phasesSonrasi.forEach(ph=>{
+    if(ph.type==='blok') totalDays+=blockDefs[ph.blokIdx].subjects.length; // 1 gün/ders
+    else if(ph.type==='tekrar-s') totalDays+=1;
+  });
+
+  const passCount=[0,0,0,0];
+  const passLabels=['','(2. geçiş)','(3. geçiş)'];
+  let day=0;
+
+  phasesSonrasi.forEach(ph=>{
+    const div=document.createElement('div');
+    div.className='timeline-phase';
+    let dotColor,dotBg,dotText,title,typeLabel,phaseDays,subHTML;
+
+    if(ph.type==='blok'){
+      const b=blockDefs[ph.blokIdx];
+      passCount[ph.blokIdx]++;
+      const pass=passCount[ph.blokIdx];
+      const passStr=pass>1?` <span style="font-size:0.72rem;opacity:0.6">${passLabels[pass-1]}</span>`:'';
+      dotColor=b.color; dotBg=b.dotBg; dotText=b.block;
+      title=`${b.block}. Blok${passStr}`;
+      typeLabel=`<span class="phase-type-label label-blok">BLOK</span>`;
+      phaseDays=b.subjects.length;
+
+      subHTML=b.subjects.map(s=>{
+        const gW=Math.max(1*34,28);
+        return `<div class="phase-subject-row">
+          <div class="ps-name">${s.name}</div>
+          <div class="ps-bars"><div class="ps-bar ps-gun" style="width:${gW}px">1 gün</div></div>
+          <div class="ps-days">1g</div>
+        </div>`;
+      }).join('');
+
+    } else if(ph.type==='tekrar-s'){
+      phaseDays=1;
+      dotColor='#facc15'; dotBg='rgba(250,204,21,0.12)'; dotText='↺';
+      title=ph.label; typeLabel=`<span class="phase-type-label label-tekrar">TEKRAR</span>`;
+
+      let tekrarSubs;
+      if(ph.allBlocks){
+        tekrarSubs = blockDefs.flatMap(b=>b.subjects.map(s=>({name:s.name, block:b.block, color:b.color})));
+      } else {
+        const b=blockDefs[ph.prevBlokIdx];
+        tekrarSubs = b.subjects.map(s=>({name:s.name, block:b.block, color:b.color}));
+      }
+
+      subHTML=`<div class="phase-subject-row" style="margin-bottom:6px">
+          <div class="ps-name" style="color:#34d399;font-size:0.75rem">☀️ Sabah · Genel Deneme</div>
+          <div class="ps-bars"><div class="ps-bar ps-genel" style="width:180px">Tüm bloklar · tam deneme</div></div>
+          <div class="ps-days" style="color:#34d399">dahil</div>
+        </div>
+        <div style="height:1px;background:#2a2f3d;margin:4px 0 8px"></div>`
+      + tekrarSubs.map(s=>`
+        <div class="phase-subject-row">
+          <div class="ps-name" style="color:${s.color}">${s.name} <span style="font-size:0.63rem;opacity:0.5">(B${s.block})</span></div>
+          <div class="ps-bars"><div class="ps-bar ps-tekrar" style="width:54px">tekrar</div></div>
+          <div class="ps-days" style="opacity:0.4">—</div>
+        </div>`).join('')
+      +`<div class="phase-subject-row" style="margin-top:5px;padding-top:7px;border-top:1px solid #2a2f3d">
+          <div class="ps-name" style="color:#facc15;font-size:0.73rem">Toplam</div>
+          <div class="ps-bars"></div>
+          <div class="ps-days" style="color:#facc15;font-weight:600">1g</div>
+        </div>`;
+    }
+
+    const s=Math.round((day+Number.EPSILON)*10)/10;
+    day+=phaseDays;
+    const e=Math.round((day+Number.EPSILON)*10)/10;
+    const pct=Math.round((day/totalDays)*100);
+    const fill=ph.type==='blok'?blockDefs[ph.blokIdx].color:'#facc15';
+    const dDisp=Number.isInteger(phaseDays)?phaseDays:Math.round(phaseDays*10)/10;
+
+    div.innerHTML=`
+      <div class="phase-dot" style="color:${dotColor};background:${dotBg};border-color:${dotColor}55">${dotText}</div>
+      <div class="phase-body" style="border-color:${dotColor}28">
+        <div class="phase-header" style="border-bottom-color:${dotColor}18">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">${typeLabel}<span class="phase-title" style="color:${dotColor}">${title}</span></div>
+          <div class="phase-meta">
+            <span class="phase-range">Gün ${s}–${e}</span>
+            <span class="phase-days-badge"><strong>${dDisp}</strong> gün</span>
+          </div>
+        </div>
+        <div class="phase-subjects">${subHTML}</div>
+        <div class="progress-row">
+          <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${fill}99"></div></div>
+          <div class="progress-label">%${pct} · ${e}/${totalDays} gün</div>
+        </div>
+      </div>`;
+    el.appendChild(div);
+  });
+}
+
+// ── INIT ────────────────────────────────────────────────────────
+renderBlockSummary('oncesi-blocks','oncesi-grand','oncesi');
+renderBlockSummary('sonrasi-blocks','sonrasi-grand','sonrasi');
+renderTimelineOncesi();
+renderTimelineSonrasi();
+
+// ── SERVICE WORKER ───────────────────────────────────────────────
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js');
+  });
+}
+
+function switchProg(name, btn){
+  document.querySelectorAll('.prog-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.prog-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('prog-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function switchView(prog, view, btn){
+  const prefix=prog+'-';
+  document.querySelectorAll('#prog-'+prog+' .view-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('#prog-'+prog+' .view-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById(prefix+view).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
